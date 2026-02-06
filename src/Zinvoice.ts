@@ -12,6 +12,12 @@ import { InvoiceService } from './domain/invoice/InvoiceService.js';
 import { AllowanceService } from './domain/allowance/AllowanceService.js';
 import { AmegoInvoiceService } from './infrastructure/amego/AmegoInvoiceService.js';
 import { AmegoAllowanceService } from './infrastructure/amego/AmegoAllowanceService.js';
+import {
+  CustomProviderConfig,
+  validateCustomProviderConfig,
+  createCustomInvoiceService,
+  createCustomAllowanceService,
+} from './CustomProvider.js';
 
 /**
  * Zinvoice client configuration
@@ -36,20 +42,24 @@ export interface ZinvoiceConfig {
  * Provides a unified interface across different e-invoice providers.
  */
 export class Zinvoice {
-  private readonly _provider: Provider;
+  private readonly _provider: Provider | 'custom';
+  private readonly _providerName: string;
   private readonly _invoiceService: InvoiceService;
   private readonly _allowanceService: AllowanceService;
   private readonly _capabilities: Set<Capability>;
 
   private constructor(
-    provider: Provider,
+    provider: Provider | 'custom',
+    providerName: string,
+    capabilities: Set<Capability>,
     invoiceService: InvoiceService,
     allowanceService: AllowanceService
   ) {
     this._provider = provider;
+    this._providerName = providerName;
+    this._capabilities = capabilities;
     this._invoiceService = invoiceService;
     this._allowanceService = allowanceService;
-    this._capabilities = PROVIDER_CAPABILITIES[provider];
   }
 
   /**
@@ -78,7 +88,64 @@ export class Zinvoice {
     const invoiceService = new AmegoInvoiceService(amegoConfig);
     const allowanceService = new AmegoAllowanceService(amegoConfig);
 
-    return new Zinvoice(Provider.AMEGO, invoiceService, allowanceService);
+    return new Zinvoice(
+      Provider.AMEGO,
+      PROVIDER_NAMES[Provider.AMEGO],
+      PROVIDER_CAPABILITIES[Provider.AMEGO],
+      invoiceService,
+      allowanceService
+    );
+  }
+
+  /**
+   * Create a custom Zinvoice client with user-provided handlers
+   *
+   * @example
+   * ```typescript
+   * const client = Zinvoice.custom({
+   *   name: '自訂系統商',
+   *   capabilities: [Capability.B2C, Capability.QUERY, Capability.LIST],
+   *   invoices: {
+   *     issue: async (invoice) => {
+   *       // 實作開立發票邏輯
+   *       return { invoiceNumber, invoiceTime, randomNumber };
+   *     },
+   *     findByNumber: async (number) => {
+   *       // 實作查詢邏輯
+   *       return invoice;
+   *     },
+   *     findByOrderId: async (orderId) => { ... },
+   *     getStatus: async (numbers) => { ... },
+   *     list: async (query) => { ... },
+   *   },
+   * });
+   * ```
+   *
+   * @throws {ValidationError} If required handlers are not implemented for registered capabilities
+   */
+  static custom(config: CustomProviderConfig): Zinvoice {
+    // Validate that all required handlers are implemented
+    validateCustomProviderConfig(config);
+
+    const capabilities = new Set(config.capabilities);
+    const invoiceService = createCustomInvoiceService(
+      config.name,
+      capabilities,
+      config.invoices
+    );
+    const allowanceService = createCustomAllowanceService(
+      config.name,
+      capabilities,
+      config.allowances
+    );
+
+    return new Zinvoice(
+      'custom',
+      config.name,
+      capabilities,
+      invoiceService,
+      allowanceService
+    );
   }
 
   /**
@@ -97,8 +164,9 @@ export class Zinvoice {
 
   /**
    * Get the current provider
+   * Returns 'custom' for custom providers
    */
-  get provider(): Provider {
+  get provider(): Provider | 'custom' {
     return this._provider;
   }
 
@@ -106,7 +174,7 @@ export class Zinvoice {
    * Get the provider display name
    */
   get providerName(): string {
-    return PROVIDER_NAMES[this._provider];
+    return this._providerName;
   }
 
   /**
@@ -128,7 +196,14 @@ export class Zinvoice {
    */
   requireCapability(capability: Capability): void {
     if (!this.supports(capability)) {
-      throw new UnsupportedCapabilityError(capability, this._provider);
+      throw new UnsupportedCapabilityError(capability, this._providerName);
     }
+  }
+
+  /**
+   * Check if this is a custom provider
+   */
+  get isCustom(): boolean {
+    return this._provider === 'custom';
   }
 }

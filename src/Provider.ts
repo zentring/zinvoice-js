@@ -2,7 +2,7 @@
  * Supported e-invoice providers (加值中心)
  */
 export enum Provider {
-  /** 光貿資訊 */
+  /** 光貿科技 */
   AMEGO = 'amego',
 }
 
@@ -22,7 +22,7 @@ export enum Capability {
   ALLOWANCE = 'allowance',
   /** 作廢 */
   VOID = 'void',
-  /** 換開發票 */
+  /** B2B 發票交換 (透過大平台傳遞確認) */
   EXCHANGE = 'exchange',
   /** 列印格式輸出 */
   PRINT = 'print',
@@ -54,5 +54,5 @@ export const PROVIDER_CAPABILITIES: Record<Provider, Set<Capability>> = {
  * Provider display names
  */
 export const PROVIDER_NAMES: Record<Provider, string> = {
-  [Provider.AMEGO]: '光貿資訊',
+  [Provider.AMEGO]: '光貿科技',
 };

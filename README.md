@@ -193,8 +193,7 @@ if (client.supports(Capability.CARRIER)) {
 }
 
 if (client.supports(Capability.EXCHANGE)) {
-  // 支援換開發票
-  await client.invoices.exchange(...);
+  // 支援 B2B 發票交換
 }
 
 // 取得所有支援的能力
@@ -213,7 +212,7 @@ console.log(capabilities);
 | `DONATION` | 捐贈 | ✓ |
 | `ALLOWANCE` | 折讓 | ✓ |
 | `VOID` | 作廢 | ✓ |
-| `EXCHANGE` | 換開 | ✓ |
+| `EXCHANGE` | B2B 交換 | ✓ |
 | `PRINT` | 列印格式 | ✓ |
 
 ## 錯誤處理
@@ -246,11 +245,51 @@ try {
 }
 ```
 
+## 自訂系統商
+
+如果您使用的加值中心尚未內建支援，可以自行實作：
+
+```typescript
+import { Zinvoice, Capability } from '@zentring/zinvoice';
+
+const client = Zinvoice.custom({
+  name: '自訂系統商',
+  capabilities: [Capability.B2C, Capability.QUERY, Capability.LIST],
+  invoices: {
+    issue: async (invoice) => {
+      // 實作開立發票邏輯
+      return {
+        invoiceNumber: InvoiceNumber.create('AA12345678'),
+        invoiceTime: new Date(),
+        randomNumber: '1234',
+        barcode: '...',
+        qrcodeLeft: '...',
+        qrcodeRight: '...',
+      };
+    },
+    findByNumber: async (number) => { /* ... */ },
+    findByOrderId: async (orderId) => { /* ... */ },
+    getStatus: async (numbers) => { /* ... */ },
+    list: async (query) => { /* ... */ },
+  },
+});
+```
+
+**重要：** 註冊的 Capability 必須實作對應的方法，否則會拋出 `ValidationError`：
+
+| Capability | 必須實作 |
+|------------|----------|
+| `B2C` / `B2B` | `invoices.issue` |
+| `VOID` | `invoices.void` |
+| `QUERY` | `invoices.findByNumber`, `findByOrderId`, `getStatus` |
+| `LIST` | `invoices.list` |
+| `ALLOWANCE` | `allowances.issue`, `void`, `findByNumber`, `findByInvoiceNumber`, `getStatus`, `list` |
+
 ## 支援的加值中心
 
 | Provider | 狀態 | 說明 |
 |----------|:----:|------|
-| `Provider.AMEGO` | ✓ | 光貿資訊 |
+| `Provider.AMEGO` | ✓ | 光貿科技 |
 
 ## 測試帳號
 

@@ -15,6 +15,11 @@ export {
   PROVIDER_CAPABILITIES,
   PROVIDER_NAMES,
 } from './Provider.js';
+export {
+  type CustomProviderConfig,
+  type CustomInvoiceHandlers,
+  type CustomAllowanceHandlers,
+} from './CustomProvider.js';
 
 // Domain layer exports - Value Objects
 export {

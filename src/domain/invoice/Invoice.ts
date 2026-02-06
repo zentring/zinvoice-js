@@ -174,6 +174,39 @@ export class Invoice {
   }
 
   /**
+   * Reconstruct an Invoice from persistence/API without validation
+   *
+   * Use this when reading existing invoices from database or API.
+   * Skips validation rules that only apply when creating new invoices.
+   */
+  static reconstruct(props: CreateInvoiceProps): Invoice {
+    // Minimal validation - just check items exist
+    if (!props.items || props.items.length === 0) {
+      throw new ValidationError('items', 'At least one item is required');
+    }
+
+    const taxType = Invoice.determineTaxType(props.items);
+    const isB2B = props.buyer.isCompany;
+
+    return new Invoice(
+      props.orderId,
+      props.buyer,
+      props.items,
+      props.carrier ?? Carrier.none(),
+      props.donation ?? Donation.none(),
+      props.remark?.trim() ?? '',
+      props.trackApiCode?.trim() ?? '',
+      taxType,
+      props.customsClearanceMark,
+      props.zeroTaxRateReason,
+      props.brandName?.trim(),
+      props.pricesIncludeTax ?? true,
+      InvoiceStatus.PENDING,
+      isB2B ? InvoiceType.B2B_ISSUE : InvoiceType.B2C_ISSUE
+    );
+  }
+
+  /**
    * Determine overall tax type from items
    */
   private static determineTaxType(items: InvoiceItem[]): TaxType {

@@ -373,7 +373,9 @@ export class AmegoInvoiceRepository implements InvoiceRepository {
       ? Donation.tryCreate(response.npoban)
       : Donation.none();
 
-    const invoice = Invoice.create({
+    // Use reconstruct to skip validation (e.g., carrier+donation exclusivity)
+    // since we're reading existing data from the API
+    const invoice = Invoice.reconstruct({
       orderId: OrderId.create(response.order_id || response.invoice_number),
       buyer,
       items,
@@ -427,7 +429,9 @@ export class AmegoInvoiceRepository implements InvoiceRepository {
       ? Donation.tryCreate(item.npoban)
       : Donation.none();
 
-    const invoice = Invoice.create({
+    // Use reconstruct to skip validation (e.g., carrier+donation exclusivity)
+    // since we're reading existing data from the API
+    const invoice = Invoice.reconstruct({
       orderId: OrderId.create(item.order_id || item.invoice_number),
       buyer,
       items: [placeholderItem],

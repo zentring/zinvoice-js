@@ -736,4 +736,18 @@ export class AmegoMapper {
   static parseIsoDate(isoStr: string): Date {
     return new Date(isoStr);
   }
+
+  /**
+   * Parse separate date (YYYYMMDD) and time (HH:mm:ss) to Date
+   *
+   * API 回傳的 invoice_date 和 invoice_time 是分開的，需要組合後解析
+   */
+  static parseDateAndTime(dateValue: string | number, timeStr: string): Date {
+    const dateStr = String(dateValue);
+    const year = dateStr.substring(0, 4);
+    const month = dateStr.substring(4, 6);
+    const day = dateStr.substring(6, 8);
+    const isoStr = `${year}-${month}-${day}T${timeStr}`;
+    return new Date(isoStr);
+  }
 }

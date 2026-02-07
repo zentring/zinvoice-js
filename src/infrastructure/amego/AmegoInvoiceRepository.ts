@@ -385,7 +385,10 @@ export class AmegoInvoiceRepository implements InvoiceRepository {
     });
 
     const invoiceNumber = InvoiceNumber.create(response.invoice_number);
-    const invoiceTime = AmegoMapper.parseIsoDate(response.invoice_time);
+    const invoiceTime = AmegoMapper.parseDateAndTime(
+      response.invoice_date,
+      response.invoice_time
+    );
 
     invoice.setInvoiceNumber(invoiceNumber, invoiceTime, response.random_number);
     invoice.updateStatus(AmegoMapper.toInvoiceStatus(response.invoice_status));
@@ -441,8 +444,10 @@ export class AmegoInvoiceRepository implements InvoiceRepository {
     });
 
     const invoiceNumber = InvoiceNumber.create(item.invoice_number);
-    // invoice_date 是 YYYYMMDD number，invoice_time 是 ISO string
-    const invoiceTime = AmegoMapper.parseIsoDate(item.invoice_time);
+    const invoiceTime = AmegoMapper.parseDateAndTime(
+      item.invoice_date,
+      item.invoice_time
+    );
 
     invoice.setInvoiceNumber(invoiceNumber, invoiceTime, item.random_number);
     invoice.updateStatus(AmegoMapper.toInvoiceStatus(item.invoice_status));

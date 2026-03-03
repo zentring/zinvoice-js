@@ -468,7 +468,8 @@ export class AmegoMapper {
         : invoice.buyer.taxId.toString(),
       BuyerName: invoice.buyer.name,
       ProductItem: invoice.items.map(AmegoMapper.toInvoiceItemPayload),
-      SalesAmount: salesAmount,
+      // 含稅時 SalesAmount 應送未稅金額，確保 SalesAmount + TaxAmount = TotalAmount
+      SalesAmount: invoice.pricesIncludeTax ? salesAmount - taxAmount : salesAmount,
       FreeTaxSalesAmount: freeTaxSalesAmount,
       ZeroTaxSalesAmount: zeroTaxSalesAmount,
       TaxType: AmegoMapper.toApiTaxType(invoice.taxType),
